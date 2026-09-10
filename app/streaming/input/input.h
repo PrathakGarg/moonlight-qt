@@ -140,6 +140,8 @@ public:
 
     void notifyFocusGained();
 
+    void abortPinchGesture();
+
     bool isCaptureActive();
 
     bool isSystemKeyCaptureActive();
@@ -186,6 +188,12 @@ private:
 
     void handleRelativeFingerEvent(SDL_TouchFingerEvent* event);
 
+    void handlePinchGesture(int phase, float magnificationDelta);
+
+    void sendPinchEvent(uint8_t eventType);
+
+    bool getNormalizedVideoCursorPosition(float &normX, float &normY) const;
+
     void performSpecialKeyCombo(KeyCombo combo);
 
     static
@@ -202,6 +210,11 @@ private:
 
     static
     Uint32 dragTimerCallback(Uint32 interval, void* param);
+
+#ifdef Q_OS_DARWIN
+    static
+    void darwinPinchCallback(int phase, float magnificationDelta, void* userdata);
+#endif
 
     SDL_Window* m_Window;
     bool m_MultiController;
@@ -249,6 +262,12 @@ private:
     SDL_TimerID m_DragTimer;
     char m_DragButton;
     int m_NumFingersDown;
+
+    bool m_PinchActive;
+    float m_PinchSpan;
+    float m_PinchAccumulatedMagnification;
+    float m_PinchCenterX;
+    float m_PinchCenterY;
 
     static const int k_ButtonMap[];
 };

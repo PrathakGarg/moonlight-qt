@@ -9,6 +9,10 @@
 #include <QDir>
 #include <QGuiApplication>
 
+#ifdef Q_OS_DARWIN
+#include "darwin_gestures.h"
+#endif
+
 SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, int streamHeight)
     : m_MultiController(prefs.multiController),
       m_GamepadMouse(prefs.gamepadMouse),
@@ -214,6 +218,12 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     SDL_zero(m_LastTouchDownEvent);
     SDL_zero(m_LastTouchUpEvent);
     SDL_zero(m_TouchDownEvent);
+
+    m_PinchActive = false;
+    m_PinchSpan = 0.10f;
+    m_PinchAccumulatedMagnification = 0.0f;
+    m_PinchCenterX = 0.5f;
+    m_PinchCenterY = 0.5f;
 }
 
 SdlInputHandler::~SdlInputHandler()
@@ -322,6 +332,8 @@ void SdlInputHandler::notifyFocusLost()
     // Raise all keys that are currently pressed. If we don't do this, certain keys
     // used in shortcuts that cause focus loss (such as Alt+Tab) may get stuck down.
     raiseAllKeys();
+
+    abortPinchGesture();
 }
 
 void SdlInputHandler::notifyFocusGained()
@@ -391,6 +403,16 @@ bool SdlInputHandler::isSystemKeyCaptureActive()
 
 void SdlInputHandler::setCaptureActive(bool active)
 {
+#ifdef Q_OS_DARWIN
+    if (active) {
+        installDarwinPinchMonitor(m_Window, darwinPinchCallback, this);
+    }
+    else {
+        removeDarwinPinchMonitor();
+        abortPinchGesture();
+    }
+#endif
+
     if (active) {
         // If we're in relative mode, try to activate SDL's relative mouse mode
         if (m_AbsoluteMouseMode || SDL_SetRelativeMouseMode(SDL_TRUE) < 0) {
