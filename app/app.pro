@@ -187,6 +187,7 @@ SOURCES += \
     settings/streamingpreferences.cpp \
     streaming/input/abstouch.cpp \
     streaming/input/gamepad.cpp \
+    streaming/input/gesture.cpp \
     streaming/input/input.cpp \
     streaming/input/keyboard.cpp \
     streaming/input/mouse.cpp \
@@ -408,11 +409,13 @@ macx {
     message(VideoToolbox renderer selected)
 
     SOURCES += \
+        streaming/input/darwin_gestures.mm \
         streaming/video/ffmpeg-renderers/vt_base.mm \
         streaming/video/ffmpeg-renderers/vt_avsamplelayer.mm \
         streaming/video/ffmpeg-renderers/vt_metal.mm
 
     HEADERS += \
+        streaming/input/darwin_gestures.h \
         streaming/video/ffmpeg-renderers/vt.h
 }
 discord-rpc {

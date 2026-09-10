@@ -6,6 +6,10 @@
 #include "utils.h"
 
 #include <QtGlobal>
+
+#ifdef Q_OS_DARWIN
+#include "streaming/input/darwin_gestures.h"
+#endif
 #include <QDir>
 #include <QGuiApplication>
 
@@ -29,6 +33,8 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
       m_AbsoluteMouseMode(prefs.absoluteMouseMode),
       m_AbsoluteTouchMode(prefs.absoluteTouchMode),
       m_DisabledTouchFeedback(false),
+      m_PinchActive(false),
+      m_PinchSpan(0.0f),
       m_LeftButtonReleaseTimer(0),
       m_RightButtonReleaseTimer(0),
       m_DragTimer(0),
@@ -218,6 +224,11 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
 
 SdlInputHandler::~SdlInputHandler()
 {
+#ifdef Q_OS_DARWIN
+    removeDarwinPinchMonitor();
+#endif
+    abortPinchGesture();
+
     for (int i = 0; i < MAX_GAMEPADS; i++) {
         if (m_GamepadState[i].mouseEmulationTimer != 0) {
             Session::get()->notifyMouseEmulationMode(false);
@@ -322,6 +333,7 @@ void SdlInputHandler::notifyFocusLost()
     // Raise all keys that are currently pressed. If we don't do this, certain keys
     // used in shortcuts that cause focus loss (such as Alt+Tab) may get stuck down.
     raiseAllKeys();
+    abortPinchGesture();
 }
 
 void SdlInputHandler::notifyFocusGained()
@@ -434,7 +446,18 @@ void SdlInputHandler::setCaptureActive(bool active)
         else {
             SDL_SetRelativeMouseMode(SDL_FALSE);
         }
+
+        abortPinchGesture();
     }
+
+#ifdef Q_OS_DARWIN
+    if (active && m_Window) {
+        installDarwinPinchMonitor(m_Window, darwinPinchCallback, this);
+    }
+    else {
+        removeDarwinPinchMonitor();
+    }
+#endif
 
     // Update mouse pointer region constraints
     updatePointerRegionLock();

@@ -130,6 +130,8 @@ public:
 
     void handleTouchFingerEvent(SDL_TouchFingerEvent* event);
 
+    void handlePinchGesture(int phase, float magnificationDelta);
+
     int getAttachedGamepadMask();
 
     void raiseAllKeys();
@@ -185,6 +187,14 @@ private:
     void disableTouchFeedback();
 
     void handleRelativeFingerEvent(SDL_TouchFingerEvent* event);
+
+    void sendPinchEvent(uint8_t eventType);
+
+    void abortPinchGesture();
+
+#if defined(Q_OS_DARWIN) || defined(__APPLE__)
+    static void darwinPinchCallback(int phase, float magnificationDelta, void* userdata);
+#endif
 
     void performSpecialKeyCombo(KeyCombo combo);
 
@@ -242,6 +252,8 @@ private:
     bool m_AbsoluteMouseMode;
     bool m_AbsoluteTouchMode;
     bool m_DisabledTouchFeedback;
+    bool m_PinchActive;
+    float m_PinchSpan;
 
     SDL_TouchFingerEvent m_TouchDownEvent[MAX_FINGERS];
     SDL_TimerID m_LeftButtonReleaseTimer;
